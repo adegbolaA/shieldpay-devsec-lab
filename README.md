@@ -5,7 +5,7 @@
 
 Full-stack **Node.js + Express + SQLite + React (Vite)** sample shaped like a small payments console: merchants, customers, cards, transactions, sessions, and JWT-backed APIs. It is built as a **secure coding and misconfiguration lab**: several flaws are **deliberately left in** and tagged in source (for example `ARKO-LAB-*`) so they can be found with review, DAST, or SAST-style thinking.
 
-## What this shows (recruiter / interviewer lens)
+## What this shows
 
 - **Application security awareness**: authn/z patterns, JWT usage, session cookies, intentional “bad” examples to remediate in an exercise.
 - **Secrets hygiene**: configuration via environment variables; `.env` is gitignored; no real keys ship in-repo (only demo seed strings).
@@ -16,7 +16,7 @@ Full-stack **Node.js + Express + SQLite + React (Vite)** sample shaped like a sm
 
 ## How it differs from “production DevSecOps”
 
-A mature org would also add runtime image scanning in registry, full IaC policy packs, branch protections, progressive delivery, centralized logging, WAF, and enterprise secrets management. This repo layers **container reproducibility + SAST + dependency and image bump automation** on top of the lab app; it is still a learning baseline, not a full platform.
+A mature org would also add runtime image scanning in registry, full IaC policy packs, branch protections, progressive delivery, centralized logging, WAF, and enterprise secrets management. This repo layers **container reproducibility + SAST + dependency and image bump automation** on top of the lab app.
 
 ## Quick start
 
