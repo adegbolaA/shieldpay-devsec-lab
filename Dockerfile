@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Reproducible production image (native deps: bcrypt, better-sqlite3)
-FROM node:20-bookworm-slim AS base
+FROM node:25-bookworm-slim AS base
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ \
   && rm -rf /var/lib/apt/lists/*
