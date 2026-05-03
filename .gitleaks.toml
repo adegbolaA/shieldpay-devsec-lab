@@ -1,0 +1,9 @@
+# Allowlist intentional lab/demo strings (not production secrets).
+title = "ShieldPay gitleaks config"
+
+[allowlist]
+paths = [
+  '''\.env\.example$''',
+  '''backend/db\.js$''',
+  '''SECURITY-LAB\.md$''',
+]

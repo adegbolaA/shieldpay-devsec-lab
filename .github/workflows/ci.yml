@@ -29,6 +29,9 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Smoke test (production /api/health)
+        run: npm run smoke
+
       - name: npm audit (critical only)
         run: npm audit --audit-level=critical
 

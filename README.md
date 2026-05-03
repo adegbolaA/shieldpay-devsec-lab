@@ -10,7 +10,9 @@ Full-stack **Node.js + Express + SQLite + React (Vite)** sample shaped like a sm
 - **Application security awareness**: authn/z patterns, JWT usage, session cookies, intentional “bad” examples to remediate in an exercise.
 - **Secrets hygiene**: configuration via environment variables; `.env` is gitignored; no real keys ship in-repo (only demo seed strings).
 - **Supply chain hygiene**: Dependabot for **npm**, **GitHub Actions**, and **base images (Dockerfile)**.
-- **CI/CD guardrails**: build + `npm audit` (critical gate), **Docker image build**, **Compose validation**, **Trivy** misconfiguration scan on the repo (table output; non-blocking exit code so base-image noise does not hide pipeline signal).
+- **CI/CD guardrails**: build, production **`npm run smoke`** (hits `/api/health`), **`npm audit` (critical gate)**, **Docker image build**, **Compose validation**, **Trivy** on the built image and Dockerfile (table output; non-blocking exit code for triage).
+- **PR security**: [**Dependency review**](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review) (blocks new **critical** vulnerable dependencies) and [**Gitleaks**](https://github.com/gitleaks/gitleaks-action) secret scan on the PR diff + history (see `.gitleaks.toml` allowlist for intentional lab files).
+- **DevSecAI / process**: see [`AI.md`](./AI.md); data-flow and abuse cases in [`docs/THREAT-MODEL.md`](./docs/THREAT-MODEL.md).
 - **SAST**: **CodeQL** (JavaScript/TypeScript) on push/PR and weekly schedule. On GitHub.com, turn on **Code scanning** once under **Settings → Code security and analysis** so CodeQL can upload results (otherwise the workflow still runs but cannot attach findings to the Security tab).
 - **Security posture signal**: **OpenSSF Scorecard** (scheduled) publishes SARIF to the Security tab when enabled for the repo.
 
