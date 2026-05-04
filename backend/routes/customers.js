@@ -1,27 +1,37 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+const customersRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+router.use(customersRateLimiter);
 router.use(requireAuth);
 
 router.get('/', (req, res, next) => {
   try {
     const merchantId = req.user.merchantId;
     const search = (req.query.search && String(req.query.search)) || '';
+    const likeSearch = `%${search}%`;
 
-    // ARKO-LAB-01: SQL built via string concatenation of user input (injection-prone)
-    const sql =
-      `SELECT * FROM customers WHERE merchant_id = ` +
-      merchantId +
-      ` AND (name LIKE '%` +
-      search +
-      `%' OR email LIKE '%` +
-      search +
-      `%' OR IFNULL(phone,'') LIKE '%` +
-      search +
-      `%') ORDER BY id DESC`;
-    const rows = db.prepare(sql).all();
+    const sql = `
+      SELECT * FROM customers
+      WHERE merchant_id = ?
+        AND (
+          name LIKE ?
+          OR email LIKE ?
+          OR IFNULL(phone,'') LIKE ?
+        )
+      ORDER BY id DESC
+    `;
+    const rows = db.prepare(sql).all(merchantId, likeSearch, likeSearch, likeSearch);
     res.json({ customers: rows });
   } catch (e) {
     next(e);

@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import lusca from 'lusca';
 
 import { initSchema, seedIfEmpty } from './db.js';
 import healthRouter from './routes/health.js';
@@ -27,12 +28,19 @@ export function createApiApp() {
 
   // ARKO-LAB-05: logs full JSON bodies on API routes in development (may include passwords / card fields)
   if (!isProd && !isTest) {
+    const sanitizeForLog = (value) => String(value).replace(/[\r\n]/g, '');
     app.use((req, res, next) => {
       if (req.path.startsWith('/api')) {
-        console.log('[ARKO-LAB-05]', req.method, req.url, JSON.stringify(req.body));
+        const safeMethod = sanitizeForLog(req.method);
+        const safeUrl = sanitizeForLog(req.url);
+        console.log('[ARKO-LAB-05]', safeMethod, safeUrl, JSON.stringify(req.body));
       }
       next();
     });
+  }
+
+  if (isProd) {
+    app.set('trust proxy', 1);
   }
 
   app.use(
@@ -40,9 +48,20 @@ export function createApiApp() {
       secret: process.env.SESSION_SECRET || 'shieldpay-session-fallback',
       resave: false,
       saveUninitialized: false,
-      cookie: { httpOnly: true },
+      cookie: { httpOnly: true, secure: isProd },
     })
   );
+
+  // Supertest does not perform the browser CSRF cookie/header flow; skip in automated tests only.
+  if (!isTest) {
+    app.use(lusca.csrf());
+    app.use((err, req, res, next) => {
+      if (err && err.code === 'EBADCSRFTOKEN') {
+        return res.status(403).json({ error: 'Invalid CSRF token' });
+      }
+      return next(err);
+    });
+  }
 
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);

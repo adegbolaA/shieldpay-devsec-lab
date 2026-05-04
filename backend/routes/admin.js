@@ -1,10 +1,17 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each authenticated client on admin routes
+});
+
 // ARKO-LAB-03: only checks JWT — missing explicit role === 'admin' gate
+router.use(adminLimiter);
 router.use(requireAuth);
 
 router.get('/merchants', (req, res, next) => {

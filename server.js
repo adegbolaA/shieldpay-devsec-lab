@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
+import rateLimit from 'express-rate-limit';
 
 import { createApiApp, attachGlobalErrorHandler } from './backend/app.js';
 
@@ -14,7 +15,14 @@ const LISTEN_HOST = process.env.LISTEN_HOST || '127.0.0.1';
 
 const app = createApiApp();
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per window
+});
+
 async function main() {
+  app.use(limiter);
+
   if (isProd) {
     const dist = path.join(__dirname, 'frontend', 'dist');
     if (!fs.existsSync(dist)) {
@@ -24,7 +32,8 @@ async function main() {
       process.exit(1);
     }
     app.use(express.static(dist));
-    app.get('*', (req, res, next) => {
+    // Express 5: named wildcard `/{*splat}` (plain `*` is no longer valid).
+    app.get('/{*splat}', (req, res, next) => {
       if (req.path.startsWith('/api')) return next();
       res.sendFile(path.join(dist, 'index.html'));
     });

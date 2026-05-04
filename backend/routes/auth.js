@@ -1,11 +1,30 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { signToken } from '../jwtUtil.js';
 
 const router = Router();
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 login attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const resetRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 reset requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 registration attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
-router.post('/login', (req, res, next) => {
+router.post('/login', loginLimiter, (req, res, next) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
@@ -35,7 +54,7 @@ router.post('/login', (req, res, next) => {
   }
 });
 
-router.post('/register', (req, res, next) => {
+router.post('/register', registerLimiter, (req, res, next) => {
   try {
     const { email, password, company_name } = req.body || {};
     if (!email || !password || !company_name) {
@@ -72,7 +91,7 @@ router.post('/register', (req, res, next) => {
 });
 
 // ARKO-LAB-08: insecure pattern — returns reset token in JSON with no email verification / no out-of-band flow
-router.post('/request-reset', (req, res, next) => {
+router.post('/request-reset', resetRequestLimiter, (req, res, next) => {
   try {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error: 'email required' });
