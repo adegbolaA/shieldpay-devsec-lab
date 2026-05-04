@@ -1,9 +1,15 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
+
+const transactionDetailLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
 
 router.get('/', (req, res, next) => {
   try {
@@ -22,7 +28,7 @@ router.get('/', (req, res, next) => {
 });
 
 // ARKO-LAB-04: sensitive data — returns full PAN/CVV snapshots on transaction detail (demo only)
-router.get('/:id', (req, res, next) => {
+router.get('/:id', transactionDetailLimiter, (req, res, next) => {
   try {
     const merchantId = req.user.merchantId;
     const row = db
