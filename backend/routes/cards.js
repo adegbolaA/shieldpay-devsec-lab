@@ -1,9 +1,19 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
+
+const cardsRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+router.use(cardsRateLimiter);
 
 // ARKO-LAB-04: returns full PAN and CVV for saved cards (demo / unsafe)
 router.get('/', (req, res, next) => {
