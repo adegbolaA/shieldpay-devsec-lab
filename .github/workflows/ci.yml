@@ -16,10 +16,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+
       - name: Harden-Runner
         uses: step-security/harden-runner@v2.19.1
-
-      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v6
         with:
@@ -49,10 +49,10 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+
       - name: Harden-Runner
         uses: step-security/harden-runner@v2.19.1
-
-      - uses: actions/checkout@v6
 
       - name: SBOM (Trivy fs → CycloneDX)
         uses: aquasecurity/trivy-action@v0.36.0

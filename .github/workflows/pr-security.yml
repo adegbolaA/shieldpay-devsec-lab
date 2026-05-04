@@ -17,10 +17,10 @@ jobs:
     name: Dependency review
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+
       - name: Harden-Runner
         uses: step-security/harden-runner@v2.19.1
-
-      - uses: actions/checkout@v6
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4.9.0
@@ -31,10 +31,10 @@ jobs:
     name: OWASP Noir Action
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+
       - name: Harden-Runner
         uses: step-security/harden-runner@v2.19.1
-
-      - uses: actions/checkout@v6
 
       - name: OWASP Noir Action
         uses: owasp-noir/noir@v0.30.0
@@ -43,12 +43,12 @@ jobs:
     name: Secret scan (Gitleaks)
     runs-on: ubuntu-latest
     steps:
-      - name: Harden-Runner
-        uses: step-security/harden-runner@v2.19.1
-
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      - name: Harden-Runner
+        uses: step-security/harden-runner@v2.19.1
 
       - uses: gitleaks/gitleaks-action@v2
         env:
