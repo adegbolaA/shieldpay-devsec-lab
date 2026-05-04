@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import { csrf } from 'lusca';
 
 import { initSchema, seedIfEmpty } from './db.js';
 import healthRouter from './routes/health.js';
@@ -40,9 +41,11 @@ export function createApiApp() {
       secret: process.env.SESSION_SECRET || 'shieldpay-session-fallback',
       resave: false,
       saveUninitialized: false,
-      cookie: { httpOnly: true },
+      cookie: { httpOnly: true, sameSite: 'lax', secure: isProd },
     })
   );
+
+  app.use(csrf());
 
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);
