@@ -38,12 +38,16 @@ export function createApiApp() {
     });
   }
 
+  if (isProd) {
+    app.set('trust proxy', 1);
+  }
+
   app.use(
     session({
       secret: process.env.SESSION_SECRET || 'shieldpay-session-fallback',
       resave: false,
       saveUninitialized: false,
-      cookie: { httpOnly: true },
+      cookie: { httpOnly: true, secure: isProd },
     })
   );
 
