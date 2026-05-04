@@ -17,6 +17,12 @@ const resetRequestLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 registration attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.post('/login', loginLimiter, (req, res, next) => {
   try {
@@ -48,7 +54,7 @@ router.post('/login', loginLimiter, (req, res, next) => {
   }
 });
 
-router.post('/register', (req, res, next) => {
+router.post('/register', registerLimiter, (req, res, next) => {
   try {
     const { email, password, company_name } = req.body || {};
     if (!email || !password || !company_name) {
