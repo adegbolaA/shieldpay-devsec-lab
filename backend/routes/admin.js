@@ -11,8 +11,8 @@ const adminLimiter = rateLimit({
 });
 
 // ARKO-LAB-03: only checks JWT — missing explicit role === 'admin' gate
-router.use(requireAuth);
 router.use(adminLimiter);
+router.use(requireAuth);
 
 router.get('/merchants', (req, res, next) => {
   try {
