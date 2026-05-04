@@ -5,6 +5,12 @@ import { db } from '../db.js';
 import { signToken } from '../jwtUtil.js';
 
 const router = Router();
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // limit each IP to 20 login attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 const resetRequestLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 reset requests per window
@@ -12,7 +18,7 @@ const resetRequestLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-router.post('/login', (req, res, next) => {
+router.post('/login', loginLimiter, (req, res, next) => {
   try {
     const { email, password } = req.body || {};
     if (!email || !password) {
