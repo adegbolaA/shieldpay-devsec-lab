@@ -4,7 +4,6 @@ import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-router.use(requireAuth);
 
 const customersRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -14,6 +13,7 @@ const customersRateLimiter = rateLimit({
 });
 
 router.use(customersRateLimiter);
+router.use(requireAuth);
 
 router.get('/', (req, res, next) => {
   try {
