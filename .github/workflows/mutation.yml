@@ -1,0 +1,37 @@
+# Stryker mutation tests on a narrow surface (auth / admin / requireAuth).
+name: Mutation tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  stryker:
+    name: Stryker (scoped)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies (include devDependencies)
+        env:
+          NODE_ENV: development
+        run: npm ci
+
+      - name: Run mutation tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+        run: npm run test:mutation

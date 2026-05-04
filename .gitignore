@@ -10,3 +10,6 @@ backend/data/*.db-shm
 backend/data/*.db-wal
 *.log
 .DS_Store
+coverage/
+.stryker-tmp/
+reports/

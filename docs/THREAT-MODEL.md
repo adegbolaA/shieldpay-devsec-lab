@@ -1,5 +1,24 @@
 # ShieldPay — lightweight threat model
 
+## Data flow (one page)
+
+```mermaid
+flowchart LR
+  subgraph untrusted["Untrusted zone"]
+    B["Browser / SPA"]
+  end
+  subgraph api["Semi-trusted"]
+    E["Express API\n+ session + JWT"]
+  end
+  subgraph data["Trusted zone"]
+    S[("SQLite\nshieldpay.db")]
+  end
+  B -->|"HTTPS / JSON\nsessions, Bearer JWT"| E
+  E -->|"parameterized queries\nWAL file"| S
+```
+
+Top trust shift: anything the browser sends is assumed hostile; the API must enforce authn/z before touching merchant-scoped rows; SQLite is only as safe as the host disk and backups.
+
 ## Trust boundaries
 
 | Zone        | Trust level | Notes                                      |
