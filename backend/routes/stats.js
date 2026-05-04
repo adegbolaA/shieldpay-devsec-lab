@@ -1,11 +1,19 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
 
-router.get('/dashboard', (req, res, next) => {
+const dashboardRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.get('/dashboard', dashboardRateLimiter, (req, res, next) => {
   try {
     const merchantId = req.user.merchantId;
     const totalVolume = db
