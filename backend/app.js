@@ -1,5 +1,6 @@
 import express from 'express';
 import session from 'express-session';
+import lusca from 'lusca';
 
 import { initSchema, seedIfEmpty } from './db.js';
 import healthRouter from './routes/health.js';
@@ -50,6 +51,14 @@ export function createApiApp() {
       cookie: { httpOnly: true, secure: isProd },
     })
   );
+
+  app.use(lusca.csrf());
+  app.use((err, req, res, next) => {
+    if (err && err.code === 'EBADCSRFTOKEN') {
+      return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+    return next(err);
+  });
 
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);
