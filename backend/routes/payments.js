@@ -1,11 +1,19 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
 
-router.post('/process', (req, res, next) => {
+const paymentRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each authenticated client to 100 payment attempts per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.post('/process', paymentRateLimiter, (req, res, next) => {
   try {
     const merchantId = req.user.merchantId;
     const { customer_id, card_id, amount_dollars, description } = req.body || {};
