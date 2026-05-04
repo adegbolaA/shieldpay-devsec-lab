@@ -6,6 +6,13 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 router.use(requireAuth);
 
+const transactionsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300
+});
+
+router.use(transactionsLimiter);
+
 const transactionDetailLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100
