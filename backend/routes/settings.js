@@ -1,10 +1,18 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 router.use(requireAuth);
+
+const exportLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.get('/profile', (req, res, next) => {
   try {
@@ -53,7 +61,7 @@ router.post('/api-keys/rotate', (req, res, next) => {
   }
 });
 
-router.get('/export', (req, res, next) => {
+router.get('/export', exportLimiter, (req, res, next) => {
   try {
     const merchantId = req.user.merchantId;
     const customers = db.prepare('SELECT * FROM customers WHERE merchant_id = ?').all(merchantId);
