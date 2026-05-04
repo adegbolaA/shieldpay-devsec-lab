@@ -15,6 +15,7 @@ Full-stack **Node.js + Express + SQLite + React (Vite)** sample shaped like a sm
 - **Mutation tests**: **Stryker** on **`backend/routes/auth.js`** and **`backend/routes/admin.js`** ([`mutation.yml`](./.github/workflows/mutation.yml); see [`stryker.conf.mjs`](./stryker.conf.mjs)).
 - **PR security**: [**Dependency review**](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review) (fails on **high** or worse new vulnerabilities) and [**Gitleaks**](https://github.com/gitleaks/gitleaks-action) on the PR diff + history (see `.gitleaks.toml` allowlist for intentional lab files).
 - **DevSecAI / portfolio process**: [`AI.md`](./AI.md); copy-paste **STRIDE-lite** / diff / test prompts in [`docs/PR-AI-REVIEW-PROMPT.md`](./docs/PR-AI-REVIEW-PROMPT.md) (use in your IDE or PR description manually—no auto-filled GitHub template); data flow + abuse cases in [`docs/THREAT-MODEL.md`](./docs/THREAT-MODEL.md).
+- **Architecture**: high-level system + trust boundaries in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 - **SAST**: **CodeQL** (JavaScript/TypeScript) on push/PR and weekly schedule. On GitHub.com, turn on **Code scanning** once under **Settings → Code security and analysis** so CodeQL can upload results (otherwise the workflow still runs but cannot attach findings to the Security tab).
 - **Security posture signal**: **OpenSSF Scorecard** (scheduled) publishes SARIF to the Security tab when enabled for the repo.
 
