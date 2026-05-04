@@ -27,9 +27,12 @@ export function createApiApp() {
 
   // ARKO-LAB-05: logs full JSON bodies on API routes in development (may include passwords / card fields)
   if (!isProd && !isTest) {
+    const sanitizeForLog = (value) => String(value).replace(/[\r\n]/g, '');
     app.use((req, res, next) => {
       if (req.path.startsWith('/api')) {
-        console.log('[ARKO-LAB-05]', req.method, req.url, JSON.stringify(req.body));
+        const safeMethod = sanitizeForLog(req.method);
+        const safeUrl = sanitizeForLog(req.url);
+        console.log('[ARKO-LAB-05]', safeMethod, safeUrl, JSON.stringify(req.body));
       }
       next();
     });
