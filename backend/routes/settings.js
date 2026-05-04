@@ -7,6 +7,14 @@ import { requireAuth } from '../middleware/auth.js';
 const router = Router();
 router.use(requireAuth);
 
+const settingsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+router.use(settingsLimiter);
+
 const exportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
