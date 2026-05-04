@@ -4,6 +4,15 @@ import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // limit auth attempts per IP across this router
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.use(authLimiter);
 router.use(requireAuth);
 
 const processPaymentLimiter = rateLimit({
