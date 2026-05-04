@@ -21,9 +21,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Harden-Runner
-        uses: step-security/harden-runner@v2.19.1
-
       - name: Run Scorecard
         uses: ossf/scorecard-action@v2.4.3
         with:

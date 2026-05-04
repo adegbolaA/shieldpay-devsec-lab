@@ -31,9 +31,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Harden-Runner
-        uses: step-security/harden-runner@v2.19.1
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
