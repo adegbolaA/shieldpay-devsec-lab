@@ -4,7 +4,6 @@ import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-router.use(requireAuth);
 
 const dashboardRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -12,6 +11,9 @@ const dashboardRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+router.use(dashboardRateLimiter);
+router.use(requireAuth);
 
 router.get('/dashboard', dashboardRateLimiter, (req, res, next) => {
   try {
