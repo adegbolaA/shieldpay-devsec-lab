@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import rateLimit from 'express-rate-limit';
 import { db } from '../db.js';
 import { signToken } from '../jwtUtil.js';
 
 const router = Router();
+const resetRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 reset requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 router.post('/login', (req, res, next) => {
   try {
@@ -72,7 +79,7 @@ router.post('/register', (req, res, next) => {
 });
 
 // ARKO-LAB-08: insecure pattern — returns reset token in JSON with no email verification / no out-of-band flow
-router.post('/request-reset', (req, res, next) => {
+router.post('/request-reset', resetRequestLimiter, (req, res, next) => {
   try {
     const { email } = req.body || {};
     if (!email) return res.status(400).json({ error: 'email required' });
