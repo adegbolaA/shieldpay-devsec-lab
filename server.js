@@ -32,7 +32,8 @@ async function main() {
       process.exit(1);
     }
     app.use(express.static(dist));
-    app.get('*', (req, res, next) => {
+    // Express 5: named wildcard `/{*splat}` (plain `*` is no longer valid).
+    app.get('/{*splat}', (req, res, next) => {
       if (req.path.startsWith('/api')) return next();
       res.sendFile(path.join(dist, 'index.html'));
     });
