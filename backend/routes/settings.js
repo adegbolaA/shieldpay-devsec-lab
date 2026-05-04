@@ -5,7 +5,6 @@ import { db } from '../db.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-router.use(requireAuth);
 
 const settingsLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -14,6 +13,7 @@ const settingsLimiter = rateLimit({
   legacyHeaders: false,
 });
 router.use(settingsLimiter);
+router.use(requireAuth);
 
 const exportLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
