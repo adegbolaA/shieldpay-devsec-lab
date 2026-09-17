@@ -1,39 +1,61 @@
-# ShieldPay — DevSecOps lab
+# ShieldPay
 
-[![CI](https://github.com/adegbolaA/shieldpay-devsec-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/adegbolaA/shieldpay-devsec-lab/actions/workflows/ci.yml)
-[![Mutation tests](https://github.com/adegbolaA/shieldpay-devsec-lab/actions/workflows/mutation.yml/badge.svg)](https://github.com/adegbolaA/shieldpay-devsec-lab/actions/workflows/mutation.yml)
-[![CodeQL](https://github.com/adegbolaA/shieldpay-devsec-lab/actions/workflows/codeql.yml/badge.svg)](https://github.com/adegbolaA/shieldpay-devsec-lab/actions/workflows/codeql.yml)
+**A fintech-style payments platform, built and instrumented end-to-end with a production-grade secure SDLC.**
 
-Full-stack **Node.js + Express + SQLite + React (Vite)** sample shaped like a small payments console: merchants, customers, cards, transactions, sessions, and JWT-backed APIs. It is built as a **secure coding and misconfiguration lab**: several flaws are **deliberately left in** and tagged in source (for example `ARKO-LAB-*`) so they can be found with review, DAST, or SAST-style thinking.
+[![CI](https://github.com/adegbolaA/shieldpay-devsecops/actions/workflows/ci.yml/badge.svg)](https://github.com/adegbolaA/shieldpay-devsecops/actions/workflows/ci.yml)
+[![Mutation tests](https://github.com/adegbolaA/shieldpay-devsecops/actions/workflows/mutation.yml/badge.svg)](https://github.com/adegbolaA/shieldpay-devsecops/actions/workflows/mutation.yml)
+[![CodeQL](https://github.com/adegbolaA/shieldpay-devsecops/actions/workflows/codeql.yml/badge.svg)](https://github.com/adegbolaA/shieldpay-devsecops/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/adegbolaA/shieldpay-devsecops/badge)](https://scorecard.dev/viewer/?uri=github.com/adegbolaA/shieldpay-devsecops)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-## What this shows
+ShieldPay is a full-stack **Node.js + Express + SQLite + React (Vite)** payments console — merchants, customers, cards, transactions, admin, JWT + session auth — built as the *target application* for a real secure-SDLC pipeline. The interesting part isn't the CRUD app; it's the eleven-workflow security automation stack wrapped around it, and the fact that the app ships with a set of **deliberately planted, source-tagged vulnerabilities** (`ARKO-LAB-*`) used as an adversarial test fixture to prove that pipeline actually catches real bugs, not just theoretical ones.
 
-- **Application security awareness**: authn/z patterns, JWT usage, session cookies, intentional “bad” examples to remediate in an exercise.
-- **Secrets hygiene**: configuration via environment variables; `.env` is gitignored; no real keys ship in-repo (only demo seed strings).
-- **Supply chain hygiene**: Dependabot for **npm**, **GitHub Actions**, and **base images (Dockerfile)**.
-- **CI/CD guardrails**: **Vitest** API tests + **coverage floors** on `backend/routes/auth.js`, `backend/routes/admin.js`, `backend/middleware/auth.js`; production **`npm run smoke`** (hits `/api/health`); **`npm audit` (critical gate)**; **Docker** build; **Compose** + **Conftest**; **Trivy** on image + Dockerfile (table output; non-blocking for triage); **SBOM** artifact (CycloneDX) per run.
-- **Mutation tests**: **Stryker** on **`backend/routes/auth.js`** and **`backend/routes/admin.js`** ([`mutation.yml`](./.github/workflows/mutation.yml); see [`stryker.conf.mjs`](./stryker.conf.mjs)).
-- **PR security**: [**Dependency review**](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review) (fails on **high** or worse new vulnerabilities) and [**Gitleaks**](https://github.com/gitleaks/gitleaks-action) on the PR diff + history (see `.gitleaks.toml` allowlist for intentional lab files).
-- **DevSecAI / portfolio process**: [`AI.md`](./AI.md); copy-paste **STRIDE-lite** / diff / test prompts in [`docs/PR-AI-REVIEW-PROMPT.md`](./docs/PR-AI-REVIEW-PROMPT.md) (use in your IDE or PR description manually—no auto-filled GitHub template); data flow + abuse cases in [`docs/THREAT-MODEL.md`](./docs/THREAT-MODEL.md).
-- **Architecture**: high-level system + trust boundaries in [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
-- **SAST**: **CodeQL** (JavaScript/TypeScript) on push/PR and weekly schedule. On GitHub.com, turn on **Code scanning** once under **Settings → Code security and analysis** so CodeQL can upload results (otherwise the workflow still runs but cannot attach findings to the Security tab).
-- **Security posture signal**: **OpenSSF Scorecard** (scheduled) publishes SARIF to the Security tab when enabled for the repo.
+## What this demonstrates
 
-### Security automation (files & behavior)
+- **Threat modeling** — data-flow diagram, trust boundaries, and abuse cases in [`docs/THREAT-MODEL.md`](./docs/THREAT-MODEL.md).
+- **SAST** — CodeQL on every push/PR and a weekly schedule.
+- **SCA / supply chain** — Dependabot across npm, GitHub Actions, and Docker base images; PR-level [Dependency review](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-dependency-review) blocking new high+ vulnerabilities; [OpenSSF Scorecard](https://scorecard.dev/) posture scoring.
+- **Secret scanning** — Gitleaks across the full PR diff and history.
+- **Test-quality gate, not just coverage** — [Stryker](https://stryker-mutator.io/) mutation testing on the auth/admin routes; a coverage number alone can't tell you if the tests are any good, mutation score can.
+- **Supply-chain provenance** — CycloneDX SBOM generated per CI run.
+- **Container & IaC hardening** — Trivy on both the built image and the Dockerfile, Conftest policy checks on the Compose file, a signed release pipeline to GHCR on tag push.
+- **CI/CD as a security control, not a formality** — `npm audit` is a hard `critical`-severity gate on every PR, not an advisory report nobody reads.
+
+## Applied, not theoretical: a real remediation
+
+The best evidence a pipeline like this works is watching it catch something real. In one pass over this repo's Dependabot backlog:
+
+- Every one of 10 open Dependabot PRs was failing CI — but not for the reason each PR's own diff suggested. Traced it to a **critical CVE already on `main`** (arbitrary file read via Vitest's UI server, [GHSA-5xrq-8626-4rwp](https://github.com/advisories/GHSA-5xrq-8626-4rwp)) that every PR inherited through GitHub's merge-ref check, regardless of what dependency it touched.
+- Patched it *without* jumping to the dependency's latest major — verified that a same-major-line patch preserved compatibility with the mutation-testing toolchain (`@stryker-mutator/vitest-runner`), where a naive major bump silently collapsed the mutation score from ~39% to ~5% while still reporting green.
+- Cleared the backlog: 8 PRs merged clean, plus follow-up dependency overrides for transitively-vulnerable packages (`qs`, `esbuild`) that their direct parents hadn't picked up yet.
+- **Result:** open Dependabot security alerts went from 6 → 2, and 0 critical/high vulnerabilities remain in the dependency tree — the 2 that remain are a single documented, deliberately deferred trade-off (see below), not an oversight.
+
+## Architecture
+
+Trust boundaries, request flow, and component responsibilities: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
+
+## Security automation
 
 | Area | Where | What it does |
 | ---- | ----- | ------------- |
-| **PR security** | [`.github/workflows/pr-security.yml`](./.github/workflows/pr-security.yml) | On every PR to `main`: **Dependency review** ([`actions/dependency-review-action@v4`](https://github.com/actions/dependency-review-action)) fails if the PR adds a **high** (or worse) vulnerable dependency (needs [**Dependency graph**](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/about-the-dependency-graph) enabled; on by default for most **public** repos). **Gitleaks** ([`gitleaks/gitleaks-action@v2`](https://github.com/gitleaks/gitleaks-action)) scans the PR with **full git history** (`fetch-depth: 0` on checkout). |
-| **Gitleaks allowlist** | [`.gitleaks.toml`](./.gitleaks.toml) | Reduces false positives for intentional lab/demo content under **`.env.example`**, **`backend/db.js`**, and **`SECURITY-LAB.md`**. |
-| **API tests + coverage** | [`backend/__tests__/api-security-gates.test.mjs`](./backend/__tests__/api-security-gates.test.mjs), [`vitest.config.js`](./vitest.config.js), [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | **`npm test`** then **`npm run test:coverage`** with thresholds scoped to **auth / admin / `requireAuth`**. |
-| **Mutation tests** | [`stryker.conf.mjs`](./stryker.conf.mjs), [`.github/workflows/mutation.yml`](./.github/workflows/mutation.yml) | **`npm run test:mutation`** (Stryker + Vitest) on **`backend/routes/auth.js`** and **`backend/routes/admin.js`** (see config comment); runs on PRs and pushes to `main`. |
-| **PR review prompts (manual)** | [`docs/PR-AI-REVIEW-PROMPT.md`](./docs/PR-AI-REVIEW-PROMPT.md) | Copy-paste prompts for **STRIDE-lite**, diff summary, and synthetic-test planning (no repo PR template). |
-| **Production smoke** | [`scripts/smoke-health.mjs`](./scripts/smoke-health.mjs), [`package.json`](./package.json) script **`smoke`**, [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) | After `npm run build`, runs **`npm run smoke`**: starts **`server.js`** with **`NODE_ENV=production`**, polls **`GET /api/health`**, then stops the server. |
-| **DevSecAI + threat model** | [`AI.md`](./AI.md), [`docs/THREAT-MODEL.md`](./docs/THREAT-MODEL.md) | AI usage guardrails; DFD (Mermaid), trust boundaries, abuse cases, and **`ARKO-LAB-*`** ties. |
+| **PR security gate** | [`pr-security.yml`](./.github/workflows/pr-security.yml) | Dependency review fails the PR on any new high+ vulnerability; Gitleaks scans the full diff + history. |
+| **SAST** | [`codeql.yml`](./.github/workflows/codeql.yml) | CodeQL (JS/TS) on push, PR, and a weekly schedule. |
+| **CI gate** | [`ci.yml`](./.github/workflows/ci.yml) | Vitest API tests + coverage floor on auth/admin/`requireAuth`, production smoke test, `npm audit --audit-level=critical`, Docker build, Compose validation, Conftest policy check, Trivy on image + Dockerfile, SBOM (CycloneDX) artifact. |
+| **Mutation testing** | [`mutation.yml`](./.github/workflows/mutation.yml), [`stryker.conf.mjs`](./stryker.conf.mjs) | Stryker + Vitest on `backend/routes/auth.js` and `backend/routes/admin.js`; build breaks below a 28% mutation-score floor. |
+| **Supply-chain posture** | [`scorecard.yml`](./.github/workflows/scorecard.yml) | OpenSSF Scorecard, scheduled weekly, published to the Security tab. |
+| **Release** | [`release-container.yml`](./.github/workflows/release-container.yml) | Tag push builds + publishes to GHCR, then Trivy-scans the published image. |
+| **AI-assisted review** | [`AI.md`](./AI.md), [`docs/PR-AI-REVIEW-PROMPT.md`](./docs/PR-AI-REVIEW-PROMPT.md) | Guardrails for AI-assisted changes; copy-paste STRIDE-lite/diff/test-planning prompts for PR review. |
 
-## How it differs from “production DevSecOps”
+## Adversarial test fixtures
 
-A mature org would also add runtime image scanning in registry, full IaC policy packs, branch protections, progressive delivery, centralized logging, WAF, and enterprise secrets management. This repo layers **container reproducibility + SAST + dependency and image bump automation** on top of the lab app.
+Nine flaws are deliberately planted and tagged in source (`ARKO-LAB-01` … `ARKO-LAB-09` — injection, broken access control, sensitive data exposure, logging gaps, misconfiguration, weak secrets, auth flow, data-at-rest) spanning the OWASP Top 10 categories. They exist to answer one question: **does the pipeline above actually find real, planted bugs, or does it just run green?** Tracking sheet and trust-boundary mapping: [`SECURITY-LAB.md`](./SECURITY-LAB.md).
+
+## Engineering trade-offs
+
+A senior engineer's job includes knowing what *not* to fix yet, and saying so out loud:
+
+- **Vitest is intentionally pinned to the 3.x line**, not the latest major. `@stryker-mutator/vitest-runner@9.2.0` breaks under Vitest 4.x/5.x despite an unrestrictive peer-dependency range — the mutation score silently collapses while CI stays green. The remaining moderate CVE this leaves open ([GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9)) is a known, accepted risk pending a coordinated Stryker + Vitest major upgrade, not an unnoticed gap.
+- A mature org would add registry-side image scanning, full IaC policy packs beyond Compose, branch protection + progressive delivery, centralized logging, a WAF, and enterprise secrets management. This repo focuses on what's provable in a CI pipeline: SAST, SCA, mutation-tested auth logic, container reproducibility, and dependency/image bump automation.
 
 ## Quick start
 
@@ -52,7 +74,7 @@ Then open the URL printed in the terminal (default **http://127.0.0.1:8788**).
 - **Demo merchant** (seeded): `merchant@demo.com` / `Demo1234!`
 - Admin user is created from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` on first DB init.
 
-Production-style run (serves Vite build):
+Production-style run (serves the Vite build):
 
 ```bash
 npm run build
@@ -73,8 +95,8 @@ The app listens on **http://localhost:8788** (container binds `0.0.0.0`; see `LI
 ## Repository safety
 
 - **Do not commit** `.env`, SQLite files under `backend/data/`, or PEM keys (see `.gitignore`).
-- Seed “API keys” and card numbers are **test / documentation-style values only**.
+- Seed "API keys" and card numbers are **test / documentation-style values only**. Not for production use, and not connected to any real payment processor.
 
 ## License
 
-Private / educational use unless you add a license. All third-party packages remain under their respective licenses.
+[MIT](./LICENSE) — third-party packages remain under their respective licenses.
