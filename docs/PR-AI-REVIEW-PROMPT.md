@@ -1,6 +1,6 @@
 # PR review assist — manual prompt templates
 
-Use these **outside** the repo in your AI tool of choice, or paste into a PR comment yourself.  
+Use these **outside** the repo in your AI tool of choice, or paste into a PR comment yourself.
 **Do not** put real secrets, `.env` contents, or production tokens in prompts.
 
 ## 1) Diff-oriented summary
