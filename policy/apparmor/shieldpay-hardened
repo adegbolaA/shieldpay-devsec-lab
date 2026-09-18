@@ -31,7 +31,9 @@ profile shieldpay-hardened flags=(attach_disconnected,mediate_deleted) {
   /usr/local/bin/node ix,
   /usr/local/lib/node_modules/npm/** r,
   /app/ r,
-  /app/** r,
+  # rm (not just r): native addons (bcrypt, better-sqlite3 prebuilds) are
+  # loaded via dlopen(), which mmaps the .node file PROT_EXEC.
+  /app/** rm,
   /lib/** rm,
   /usr/lib/** rm,
   /etc/ld.so.cache r,
