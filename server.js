@@ -3,7 +3,6 @@ import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createServer as createViteServer } from 'vite';
 import rateLimit from 'express-rate-limit';
 
 import { createApiApp, attachGlobalErrorHandler } from './backend/app.js';
@@ -38,6 +37,7 @@ async function main() {
       res.sendFile(path.join(dist, 'index.html'));
     });
   } else {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       root: path.join(__dirname, 'frontend'),
       server: { middlewareMode: true },

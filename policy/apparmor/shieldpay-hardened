@@ -1,0 +1,54 @@
+#include <tunables/global>
+
+# Custom AppArmor profile for the ShieldPay production container, scoped to
+# exactly what the Node.js process needs: read the app + runtime, read/write
+# only its SQLite data dir and /tmp, and talk TCP. Everything else is denied
+# by AppArmor's default-deny, not just carved out with explicit deny rules.
+#
+# Enforced only in CI (.github/workflows/ci.yml, `docker` job) on the Ubuntu
+# runner's real AppArmor LSM — Docker Desktop's Linux VM does not ship
+# AppArmor, so this cannot be loaded/enforced on a local `docker compose up`.
+# `cap_drop: ALL` in docker-compose.yml is the control that's portable.
+profile shieldpay-hardened flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+
+  network inet stream,
+  network inet6 stream,
+
+  # Runtime + application code (read-only; the image's own root fs is
+  # already read-only via `read_only: true` in compose)
+  /usr/local/bin/node ix,
+  /usr/local/lib/node_modules/npm/** r,
+  /app/ r,
+  /app/** r,
+  /lib/** rm,
+  /usr/lib/** rm,
+  /etc/ld.so.cache r,
+  /etc/ld.so.preload r,
+  /etc/nsswitch.conf r,
+  /etc/resolv.conf r,
+  /etc/hosts r,
+  /etc/passwd r,
+  /etc/group r,
+
+  # SQLite data directory (the compose named volume) and scratch space
+  /app/backend/data/ rw,
+  /app/backend/data/** rwk,
+  /tmp/ rw,
+  /tmp/** rwk,
+
+  # Proc/sys: only what Node's runtime introspection needs, never writes
+  /proc/sys/kernel/random/uuid r,
+  /proc/*/status r,
+  /proc/*/stat r,
+  /proc/meminfo r,
+  /proc/cpuinfo r,
+
+  # Explicit belt-and-suspenders on top of cap_drop: ALL and no-new-privileges
+  deny capability,
+  deny mount,
+  deny umount,
+  deny ptrace,
+  deny /sys/** w,
+  deny /proc/sys/** w,
+}

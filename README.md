@@ -18,7 +18,7 @@ ShieldPay is a full-stack **Node.js + Express + SQLite + React (Vite)** payments
 - **Secret scanning** — Gitleaks across the full PR diff and history.
 - **Test-quality gate, not just coverage** — [Stryker](https://stryker-mutator.io/) mutation testing on the auth/admin routes; a coverage number alone can't tell you if the tests are any good, mutation score can.
 - **Supply-chain provenance** — CycloneDX SBOM generated per CI run.
-- **Container & IaC hardening** — Trivy on both the built image and the Dockerfile, Conftest policy checks on the Compose file, a signed release pipeline to GHCR on tag push.
+- **Container & IaC hardening** — zero capabilities, no privilege escalation, read-only root filesystem, and a custom AppArmor profile enforced (with a negative-control test) in CI; Trivy on the built image and the Dockerfile; Conftest turns the hardening into a CI gate, not a one-time config change. Details + a documented, evidence-based decision *not* to ship a custom seccomp profile: [`docs/CONTAINER-HARDENING.md`](./docs/CONTAINER-HARDENING.md).
 - **CI/CD as a security control, not a formality** — `npm audit` is a hard `critical`-severity gate on every PR, not an advisory report nobody reads.
 
 ## Applied, not theoretical: a real remediation
@@ -30,6 +30,8 @@ The best evidence a pipeline like this works is watching it catch something real
 - Cleared the backlog: 8 PRs merged clean, plus follow-up dependency overrides for transitively-vulnerable packages (`qs`, `esbuild`) that their direct parents hadn't picked up yet.
 - **Result:** open Dependabot security alerts went from 6 → 2, and 0 critical/high vulnerabilities remain in the dependency tree — the 2 that remain are a single documented, deliberately deferred trade-off (see below), not an oversight.
 
+A separate pass hardening the container (see [`docs/CONTAINER-HARDENING.md`](./docs/CONTAINER-HARDENING.md)) surfaced a second real bug: the production image **couldn't actually start** — a static top-level `import` of a devDependency (`vite`) that the production install doesn't ship. The `docker` CI job built the image on every PR but never ran it, so this shipped silently. Fixed the import, then closed the actual gap: CI now boots the built image under its full hardened runtime flags and fails the build if `/api/health` doesn't come up.
+
 ## Architecture
 
 Trust boundaries, request flow, and component responsibilities: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
@@ -40,7 +42,7 @@ Trust boundaries, request flow, and component responsibilities: [`docs/ARCHITECT
 | ---- | ----- | ------------- |
 | **PR security gate** | [`pr-security.yml`](./.github/workflows/pr-security.yml) | Dependency review fails the PR on any new high+ vulnerability; Gitleaks scans the full diff + history. |
 | **SAST** | [`codeql.yml`](./.github/workflows/codeql.yml) | CodeQL (JS/TS) on push, PR, and a weekly schedule. |
-| **CI gate** | [`ci.yml`](./.github/workflows/ci.yml) | Vitest API tests + coverage floor on auth/admin/`requireAuth`, production smoke test, `npm audit --audit-level=critical`, Docker build, Compose validation, Conftest policy check, Trivy on image + Dockerfile, SBOM (CycloneDX) artifact. |
+| **CI gate** | [`ci.yml`](./.github/workflows/ci.yml) | Vitest API tests + coverage floor on auth/admin/`requireAuth`, production smoke test, `npm audit --audit-level=critical`, Docker build + a *runtime* smoke test under the hardened flags (not just a build), AppArmor profile load + enforce + negative-control test, Compose validation, Conftest policy check, Trivy on image + Dockerfile, SBOM (CycloneDX) artifact. |
 | **Mutation testing** | [`mutation.yml`](./.github/workflows/mutation.yml), [`stryker.conf.mjs`](./stryker.conf.mjs) | Stryker + Vitest on `backend/routes/auth.js` and `backend/routes/admin.js`; build breaks below a 28% mutation-score floor. |
 | **Supply-chain posture** | [`scorecard.yml`](./.github/workflows/scorecard.yml) | OpenSSF Scorecard, scheduled weekly, published to the Security tab. |
 | **Release** | [`release-container.yml`](./.github/workflows/release-container.yml) | Tag push builds + publishes to GHCR, then Trivy-scans the published image. |
@@ -55,6 +57,7 @@ Nine flaws are deliberately planted and tagged in source (`ARKO-LAB-01` … `ARK
 A senior engineer's job includes knowing what *not* to fix yet, and saying so out loud:
 
 - **Vitest is intentionally pinned to the 3.x line**, not the latest major. `@stryker-mutator/vitest-runner@9.2.0` breaks under Vitest 4.x/5.x despite an unrestrictive peer-dependency range — the mutation score silently collapses while CI stays green. The remaining moderate CVE this leaves open ([GHSA-82fw-gwwq-j7x9](https://github.com/advisories/GHSA-82fw-gwwq-j7x9)) is a known, accepted risk pending a coordinated Stryker + Vitest major upgrade, not an unnoticed gap.
+- **No custom seccomp profile, on purpose.** Traced the container's real syscalls, then found the public Docker default-seccomp reference used to validate a tighter profile didn't match what this Engine version actually enforces (verified against `/proc/1/status` on the running container). Shipping a hand-built allow-list against a reference already shown to be wrong would trade a working control for a fragile one. Full writeup: [`docs/CONTAINER-HARDENING.md`](./docs/CONTAINER-HARDENING.md).
 - A mature org would add registry-side image scanning, full IaC policy packs beyond Compose, branch protection + progressive delivery, centralized logging, a WAF, and enterprise secrets management. This repo focuses on what's provable in a CI pipeline: SAST, SCA, mutation-tested auth logic, container reproducibility, and dependency/image bump automation.
 
 ## Quick start
